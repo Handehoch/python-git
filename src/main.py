@@ -2,11 +2,6 @@ import csv
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Border, Side
-import matplotlib.pyplot as plt
-import numpy as np
-from jinja2 import Environment, FileSystemLoader
-import pathlib
-import pdfkit
 
 
 class Vacancy:
@@ -55,27 +50,27 @@ class DataSet:
 	
 	def get_data(self):
 		salary = {}
-		salary_of_vacancy_name = {}
+		vacancy_salary = {}
 		salary_city = {}
 		count_of_vacancies = 0
 		
-		for vacancy_dictionary in self.csv_reader():
-			vacancy = Vacancy(vacancy_dictionary)
+		for vacancy_dict in self.csv_reader():
+			vacancy = Vacancy(vacancy_dict)
 			self.increment_dict(salary, vacancy.year, [vacancy.salary_average])
 			if vacancy.name.find(self.vacancy_name) != -1:
-				self.increment_dict(salary_of_vacancy_name, vacancy.year, [vacancy.salary_average])
+				self.increment_dict(vacancy_salary, vacancy.year, [vacancy.salary_average])
 			self.increment_dict(salary_city, vacancy.area_name, [vacancy.salary_average])
 			count_of_vacancies += 1
 		
-		vacancies_number = dict([(key, len(value)) for key, value in salary.items()])
-		vacancies_number_by_name = dict([(key, len(value)) for key, value in salary_of_vacancy_name.items()])
+		vacancies_amount = dict([(key, len(value)) for key, value in salary.items()])
+		vacancies_amount_by_name = dict([(key, len(value)) for key, value in vacancy_salary.items()])
 		
-		if not salary_of_vacancy_name:
-			salary_of_vacancy_name = dict([(key, [0]) for key, value in salary.items()])
-			vacancies_number_by_name = dict([(key, 0) for key, value in vacancies_number.items()])
+		if not vacancy_salary:
+			vacancy_salary = dict([(key, [0]) for key, value in salary.items()])
+			vacancies_amount_by_name = dict([(key, 0) for key, value in vacancies_amount.items()])
 		
-		data1 = self.get_average(salary)
-		data2 = self.get_average(salary_of_vacancy_name)
+		data = self.get_average(salary)
+		data2 = self.get_average(vacancy_salary)
 		data3 = self.get_average(salary_city)
 		
 		data4 = {}
@@ -90,7 +85,7 @@ class DataSet:
 		data3 = dict(data3[:10])
 		data5 = dict(data5[:10])
 		
-		return data1, vacancies_number, data2, vacancies_number_by_name, data3, data5
+		return data, vacancies_amount, data2, vacancies_amount_by_name, data3, data5
 	
 	@staticmethod
 	def print_data(data1, data2, data3, data4, data5, data6):
@@ -113,9 +108,6 @@ class InputConnect:
 		
 		report = Report(self.vacancy_name, data1, data2, data3, data4, data5, data6)
 		report.create_excel_table()
-		report.save('report.xlsx')
-		report.create_image()
-		report.create_pdf()
 
 
 class Report:
@@ -186,73 +178,12 @@ class Report:
 			for col in 'ABDE':
 				ws_sheet[col + str(row + 1)].border = Border(left=thin, bottom=thin, right=thin, top=thin)
 		
+		self.data1[1] = 1
 		for row, _ in enumerate(self.data1):
 			for col in 'ABCDE':
 				ws_active[col + str(row + 1)].border = Border(left=thin, bottom=thin, right=thin, top=thin)
-	
-	def create_image(self):
-		fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2)
 		
-		bar1 = ax1.bar(np.array(list(self.data1.keys())) - 0.4, self.data1.values(), width=0.4)
-		bar2 = ax1.bar(np.array(list(self.data1.keys())), self.data3.values(), width=0.4)
-		ax1.set_title('Уровень зарплат по годам', fontdict={'fontsize': 8})
-		ax1.grid(axis='y')
-		ax1.legend((bar1[0], bar2[0]), ('средняя з/п', 'з/п ' + self.vacancy_name.lower()), prop={'size': 8})
-		ax1.set_xticks(np.array(list(self.data1.keys())) - 0.2, list(self.data1.keys()), rotation=90)
-		ax1.xaxis.set_tick_params(labelsize=8)
-		ax1.yaxis.set_tick_params(labelsize=8)
-		
-		ax2.set_title('Количество вакансий по годам', fontdict={'fontsize': 8})
-		bar1 = ax2.bar(np.array(list(self.data2.keys())) - 0.4, self.data2.values(), width=0.4)
-		bar2 = ax2.bar(np.array(list(self.data2.keys())), self.data4.values(), width=0.4)
-		ax2.legend((bar1[0], bar2[0]), ('Количество вакансий', 'Количество вакансий\n' + self.vacancy_name.lower()),
-							 prop={'size': 8})
-		ax2.set_xticks(np.array(list(self.data2.keys())) - 0.2, list(self.data2.keys()), rotation=90)
-		ax2.grid(axis='y')
-		ax2.xaxis.set_tick_params(labelsize=8)
-		ax2.yaxis.set_tick_params(labelsize=8)
-		
-		ax3.set_title('Уровень зарплат по городам', fontdict={'fontsize': 8})
-		ax3.barh(list([str(a).replace(' ', '\n').replace('-', '-\n') for a in reversed(list(self.data5.keys()))]),
-						 list(reversed(list(self.data5.values()))), color='blue', height=0.5, align='center')
-		ax3.yaxis.set_tick_params(labelsize=6)
-		ax3.xaxis.set_tick_params(labelsize=8)
-		ax3.grid(axis='x')
-		
-		ax4.set_title('Доля вакансий по городам', fontdict={'fontsize': 8})
-		other = 1 - sum([value for value in self.data6.values()])
-		ax4.pie(list(self.data6.values()) + [other], labels=list(self.data6.keys()) + ['Другие'],
-						textprops={'fontsize': 6})
-		
-		plt.tight_layout()
-		plt.savefig('graph.png')
-	
-	def create_pdf(self):
-		env = Environment(loader=FileSystemLoader('../templates'))
-		template = env.get_template("pdf.html")
-		data = []
-		for year in self.data1.keys():
-			data.append([year, self.data1[year], self.data2[year], self.data3[year], self.data4[year]])
-		
-		for key in self.data6:
-			self.data6[key] = round(self.data6[key] * 100, 2)
-		
-		pdf_template = template.render(
-			{
-				'name': self.vacancy_name,
-				'path': '{0}/{1}'.format(pathlib.Path(__file__).parent.resolve(), 'graph.png'),
-				'data': data,
-				'data5': self.data5,
-				'data6': self.data6
-			}
-		)
-		
-		config = pdfkit.configuration(wkhtmltopdf=r'C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe')
-		# pdfkit.from_string(pdf_template, 'report.pdf', configuration=config, options={"enable-local-file-access": ""})
-		pdfkit.from_string(pdf_template, 'report.pdf', configuration=config, options={"enable-local-file-access": ""})
-	
-	def save(self, filename):
-		self.wb.save(filename=filename)
+		self.wb.save('report.xlsx')
 
 
 if __name__ == '__main__':
