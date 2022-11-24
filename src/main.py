@@ -12,6 +12,8 @@ def main():
 		
 	print('Hello develop')
 	
+	print('Hello main')
+	
 	
 if __name__ == '__main__':
 	main()
