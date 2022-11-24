@@ -10,6 +10,8 @@ def main():
 	elif int(version) == 2:
 		InputConnect()
 	
+	print('Hello main')
+	
 	
 if __name__ == '__main__':
 	main()
