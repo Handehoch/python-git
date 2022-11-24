@@ -9,6 +9,8 @@ def main():
 		InputConnectOld()
 	elif int(version) == 2:
 		InputConnect()
+		
+	print('Hello develop')
 	
 	
 if __name__ == '__main__':
