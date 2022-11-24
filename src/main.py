@@ -1,12 +1,12 @@
-from version.first import InputConnect as InputConnectOld
+from version.first import InputConnect as InputConnectOld2
 from version.second import InputConnect
 
 
 def main():
 	version = input('Ведите версию:')
 	
-	if int(version) == 2:
-		InputConnectOld()
+	if int(version) == 1:
+		InputConnectOld2()
 	elif int(version) == 2:
 		InputConnect()
 	
