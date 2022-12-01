@@ -1,13 +1,33 @@
 import csv
-from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Font, Border, Side
+import datetime
+import pathlib
+
 import matplotlib.pyplot as plt
 import numpy as np
-from jinja2 import Environment, FileSystemLoader
-import pathlib
 import pdfkit
+from dateutil.parser import parse
+from jinja2 import Environment, FileSystemLoader
+from openpyxl import Workbook
+from openpyxl.styles import Font, Border, Side
+from openpyxl.utils import get_column_letter
+from line_profiler import LineProfiler
 
+profiler = LineProfiler()
+
+
+class Timer:
+	@staticmethod
+	def parse_sliced_year(date: str) -> int:
+		return int(date[:4])
+	
+	@staticmethod
+	def strptime_parse_year(date: str) -> int:
+		return datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S%z').year
+	
+	@staticmethod
+	def dateutil_parse_year(date: str) -> int:
+		return parse(date).year
+	
 
 class Vacancy:
 	"""
@@ -21,6 +41,7 @@ class Vacancy:
 		"KZT": 0.13, "RUR": 1, "UAH": 1.64, "USD": 60.66, "UZS": 0.0055,
 	}
 	
+	@profile
 	def __init__(self, vacancy):
 		"""
 		Инициализирует объект Vacancy, выполняет конвертацию для целочисленных полей
@@ -36,7 +57,7 @@ class Vacancy:
 		self.salary_currency = vacancy['salary_currency']
 		self.salary_average = self.currency_rate[self.salary_currency] * (self.salary_from + self.salary_to) / 2
 		self.area_name = vacancy['area_name']
-		self.year = int(vacancy['published_at'][:4])
+		self.year = Timer.dateutil_parse_year(vacancy['published_at'])
 
 
 class DataSet:
@@ -59,9 +80,9 @@ class DataSet:
 	@staticmethod
 	def increment_dict(dictionary, key, amount):
 		"""Увеличивает словарь на определённое количество
-		>>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'a', 6){{'a': 7, 'b': 2, 'c': 3}}
-		>>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'b', 6){{'a': 1, 'b': 8, 'c': 3}}
-		>>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'c', 6){{'a': 1, 'b': 2, 'c': 9}}
+		# >>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'a', 6){{'a': 7, 'b': 2, 'c': 3}}
+		# >>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'b', 6){{'a': 1, 'b': 8, 'c': 3}}
+		# >>> DataSet.increment_dict({'a': 1, 'b': 2, 'c': 3}, 'c', 6){{'a': 1, 'b': 2, 'c': 9}}
 		"""
 		if key in dictionary:
 			dictionary[key] += amount
@@ -74,9 +95,9 @@ class DataSet:
 		
 		:returns dict
 		
-		>>> DataSet.get_average({1: [2, 5], 2: [3, 6]}){1: 3, 2: 4}
-		>>> DataSet.get_average({1: [3, 3], 2: [4, 10]}){1: 3, 2: 7}
-		>>> DataSet.get_average({1: [2, 3], 2: [0, 16]}){1: 2, 2: 8}
+		# >>> DataSet.get_average({1: [2, 5], 2: [3, 6]}){1: 3, 2: 4}
+		# >>> DataSet.get_average({1: [3, 3], 2: [4, 10]}){1: 3, 2: 7}
+		# >>> DataSet.get_average({1: [2, 3], 2: [0, 16]}){1: 2, 2: 8}
 		"""
 		new_dictionary = {}
 		for key, values in dictionary.items():
@@ -333,3 +354,8 @@ class Report:
 		:returns None
 		"""
 		self.wb.save(filename=filename)
+
+
+if __name__ == '__main__':
+	InputConnect()
+	
