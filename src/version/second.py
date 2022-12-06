@@ -1,33 +1,17 @@
 import csv
-import datetime
 import pathlib
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pdfkit
-from dateutil.parser import parse
 from jinja2 import Environment, FileSystemLoader
 from openpyxl import Workbook
 from openpyxl.styles import Font, Border, Side
 from openpyxl.utils import get_column_letter
 from line_profiler import LineProfiler
+from src.utils.dataparser.dataparser import DataParser
 
 profiler = LineProfiler()
-
-
-class Timer:
-	@staticmethod
-	def parse_sliced_year(date: str) -> int:
-		return int(date[:4])
-	
-	@staticmethod
-	def strptime_parse_year(date: str) -> int:
-		return datetime.datetime.strptime(date, '%Y-%m-%dT%H:%M:%S%z').year
-	
-	@staticmethod
-	def dateutil_parse_year(date: str) -> int:
-		return parse(date).year
-	
 
 class Vacancy:
 	"""
@@ -57,7 +41,7 @@ class Vacancy:
 		self.salary_currency = vacancy['salary_currency']
 		self.salary_average = self.currency_rate[self.salary_currency] * (self.salary_from + self.salary_to) / 2
 		self.area_name = vacancy['area_name']
-		self.year = Timer.dateutil_parse_year(vacancy['published_at'])
+		self.year = DataParser.dateutil_parse_year(vacancy['published_at'])
 
 
 class DataSet:
