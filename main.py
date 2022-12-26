@@ -1,26 +1,9 @@
-from version.first import InputConnect as InputConnectOld2
-from version.second import InputConnect
-
-
-def main():
-	version = input('Ведите версию:')
-
-	if int(version) == 1:
-		InputConnectOld2()
-	elif int(version) == 2:
-		InputConnect()
-
-
-if __name__ == '__main__':
-	main()
-
-
 import csv
 import os
 
 from multiprocessing import Pool
 from line_profiler import LineProfiler
-from utils.dataparser.dataparser import DataParser
+from src.utils.dataparser.dataparser import DataParser
 
 profiler = LineProfiler()
 
@@ -210,17 +193,17 @@ class Multiprocessing:
 	"""
     Работает с мультипроцессингом
     Attributes:
-			pools (str): Созданные пуллы
-	"""
+        pools (str): Созданные пуллы
+    """
 	
 	def __init__(self, pools) -> None:
 		self.pools = pools
 	
 	def get_united_dict(self) -> set:
 		"""
-			Возвращает результаты выполнения всех процессов
-			:return: Множество результатов
-		"""
+        Возвращает результаты выполнения всех процессов
+        :return: Множество результатов
+        """
 		answer = self.pools[0].get()
 		for i in range(1, len(self.pools)):
 			for k in range(0, 4):

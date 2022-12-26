@@ -11,6 +11,7 @@ from openpyxl.utils import get_column_letter
 from line_profiler import LineProfiler
 from src.utils.dataparser.dataparser import DataParser
 
+
 profiler = LineProfiler()
 
 class Vacancy:
